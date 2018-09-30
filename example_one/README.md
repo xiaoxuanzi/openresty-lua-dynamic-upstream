@@ -1,20 +1,20 @@
 Example one
 ====
-将信息存放在文件中，以便重启使用
+将集群名存于内存，并持久化到文件中，以便重启使用
 
 Table of Contents
 =================
 
-* [Example one](#Example one)
-* [Nginx Conf](#Nginx Conf)
-* [Lua Script](#Lua Script)
+* [Example one](#example-one)
+* [Nginx Conf](#nginx-conf)
+* [Lua Script](#lua-script)
 * [Installation](#installation)
 * [Author](#author)
 * [Copyright and License](#copyright-and-license)
 * [See Also](#see-also)
 
 
-Nginx Conf
+[Nginx Conf](nginx_dynamic_upstream.conf)
 ========
 
 ```nginx
@@ -44,9 +44,9 @@ http {
         server 127.0.0.1:8084;
         server 127.0.0.1:8083;
     }
-
+    #初始化upstream，从文件中读取
     init_by_lua_block {
-            local dy_chose_upst = require "dy_chose_upst_file"
+            local dy_chose_upst = require "dynamic_upstream"
             dy_chose_upst.init_upstream()
     }
 
@@ -57,9 +57,10 @@ http {
         access_log  logs/80.access.log  main;
         error_log   logs/80.error.log error;
 
+        # 切换upstream集群
         location = /_switch_upstream {
             content_by_lua_block {
-                    local dy_chose_upst = require "dy_chose_upst_file"
+                    local dy_chose_upst = require "dynamic_upstream"
                     dy_chose_upst.choose_upstream()
             }
         }
@@ -127,7 +128,7 @@ http {
 }
 ```
 
-Lua Script
+[Lua Script](dynamic_upstream.lua)
 ========
 
 ```nginx
@@ -138,8 +139,8 @@ local cjson_safe = require "cjson.safe"
 --local libluafs = require "libluafs"
 
 local conf = {
-    fname = "select_upstream.json",
-    upstream_list = {"lua_upstream", "default_upstream"}
+    fname = "select_upstream.json", --存放upstream集群名的文件路径，文件内容以json格式保存，并包含切换时间
+    upstream_list = {"lua_upstream", "default_upstream"} --供切换的集群名
 }
 
 local  _M = {}
@@ -290,7 +291,7 @@ return _M
 
 Installation
 ============
-Copy the nginx conf and lua script to a location which is in the seaching path of lua require module 
+Copy the nginx conf and lua script to the appropriate location
 
 [Back to TOC](#table-of-contents)
 
